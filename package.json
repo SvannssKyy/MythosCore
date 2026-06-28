@@ -1,0 +1,32 @@
+{
+  "name": "mythos-core",
+  "version": "1.0.0",
+  "description": "Mythos Core Discord Bot",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "concurrently \"node src/index.js\" \"node src/dashboard/server.js\"",
+    "dev": "nodemon src/index.js",
+    "deploy": "node src/deploy-commands.js",
+    "dashboard": "node src/dashboard/server.js",
+    "bot": "node src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "better-sqlite3": "^9.4.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4",
+    "dotenv": "^16.4.1",
+    "node-fetch": "^2.7.0",
+    "ms": "^2.1.3",
+    "axios": "^1.6.7",
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

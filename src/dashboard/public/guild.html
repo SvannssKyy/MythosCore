@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mythos Core — სერვერი</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Panel Cards */
+    .panel-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+    .panel-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .panel-type-badge {
+      font-size: .75rem;
+      background: var(--bg-hover);
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      color: var(--text-muted);
+      margin-bottom: .4rem;
+      display: inline-block;
+    }
+    .panel-title { font-weight: 700; font-size: 1.1rem; margin: .3rem 0; }
+    .panel-meta { font-size: .8rem; color: var(--text-muted); }
+    .panel-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+    .panel-preview { margin-top: .8rem; }
+
+    /* Discord Embed Preview */
+    .discord-embed {
+      background: #2f3136;
+      border-radius: 4px;
+      padding: 1rem 1rem 1rem 1.2rem;
+      border-left: 4px solid #5865F2;
+      max-width: 500px;
+    }
+    .embed-title { font-weight: 700; font-size: .95rem; margin-bottom: .4rem; color: #fff; }
+    .embed-desc { font-size: .85rem; color: #dcddde; white-space: pre-wrap; line-height: 1.5; }
+    .embed-buttons { margin-top: .8rem; display: flex; gap: .4rem; flex-wrap: wrap; }
+    .embed-btn {
+      padding: .35rem .8rem;
+      border-radius: 4px;
+      font-size: .82rem;
+      font-weight: 500;
+      cursor: default;
+    }
+    .embed-btn-primary { background: #5865F2; color: #fff; }
+    .embed-btn-secondary { background: #4f545c; color: #fff; }
+    .embed-btn-success { background: #57F287; color: #000; }
+    .embed-btn-danger { background: #ED4245; color: #fff; }
+    .embed-footer { font-size: .75rem; color: #72767d; margin-top: .8rem; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2rem;
+      border: 1px solid var(--border);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h2 { font-size: 1.3rem; font-weight: 700; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: .2rem .5rem;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 600px) { .modal-grid { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .4rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem .8rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .9rem;
+      box-sizing: border-box;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-group input[type="color"] { height: 42px; padding: .2rem; cursor: pointer; }
+
+    /* Button list */
+    .button-list { border: 1px solid var(--border); border-radius: 8px; padding: .6rem; min-height: 60px; margin-bottom: .5rem; }
+    .button-item { display: flex; align-items: center; justify-content: space-between; padding: .4rem .5rem; border-radius: 6px; margin-bottom: .3rem; background: var(--bg); }
+    .button-item-info { display: flex; align-items: center; gap: .6rem; }
+    .button-item-actions { display: flex; gap: .3rem; }
+
+    .btn-sm { padding: .25rem .6rem; font-size: .78rem; }
+    .btn-danger { background: #ED4245; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-danger:hover { background: #c0383a; }
+
+    /* Preview panel */
+    .preview-panel { background: var(--bg); border-radius: 10px; padding: 1rem; }
+    .preview-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: .8rem; }
+
+    .modal-footer { margin-top: 1.5rem; display: flex; gap: .8rem; justify-content: flex-end; }
+
+    /* Template buttons */
+    .template-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .5rem 1rem; cursor: pointer; color: var(--text); font-size: .85rem; }
+    .template-btn:hover { border-color: var(--accent); }
+  </style>
+</head>
+<body class="app-page">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">⚡</div>
+      <span>Mythos Core</span>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <a href="/dashboard" class="nav-item">
+        <span class="nav-icon">←</span> სერვერები
+      </a>
+      <hr class="nav-divider">
+      <a href="#overview" class="nav-item active" onclick="showTab('overview')">
+        <span class="nav-icon">📊</span> მიმოხილვა
+      </a>
+      <a href="#panels" class="nav-item" onclick="showTab('panels')">
+        <span class="nav-icon">📋</span> პანელები
+      </a>
+      <a href="#tickets" class="nav-item" onclick="showTab('tickets')">
+        <span class="nav-icon">🎫</span> ბილეთები
+      </a>
+      <a href="#giveaways" class="nav-item" onclick="showTab('giveaways')">
+        <span class="nav-icon">🎉</span> გათამაშებები
+      </a>
+      <a href="#invites" class="nav-item" onclick="showTab('invites')">
+        <span class="nav-icon">📨</span> მოწვევები
+      </a>
+      <a href="#applications" class="nav-item" onclick="showTab('applications')">
+        <span class="nav-icon">📝</span> განაცხადები
+      </a>
+      <a href="#settings" class="nav-item" onclick="showTab('settings')">
+        <span class="nav-icon">⚙️</span> პარამეტრები
+      </a>
+      <hr class="nav-divider">
+      <a href="/logout" class="nav-item logout">
+        <span class="nav-icon">🚪</span> გამოსვლა
+      </a>
+    </nav>
+    <div class="sidebar-user" id="userInfo"></div>
+  </aside>
+
+  <main class="main-content">
+    <!-- Overview -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="page-header">
+        <h1 id="guildName">სერვერი</h1>
+        <p>სერვერის სტატისტიკა და მიმოხილვა</p>
+      </div>
+      <div class="stats-row" id="overviewStats"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">🎫 ბოლო ბილეთები</div>
+          <div id="recentTickets" class="list-container"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">📝 ბოლო განაცხადები</div>
+          <div id="recentApps" class="list-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div id="tab-panels" class="tab-content">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1>📋 პანელები</h1>
+          <p>შექმენი და მართე Discord embed პანელები ღილაკებით</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreatePanel()">➕ პანელის შექმნა</button>
+      </div>
+      <div id="panelsList"></div>
+    </div>
+
+    <!-- Tickets -->
+    <div id="tab-tickets" class="tab-content">
+      <div class="page-header">
+        <h1>🎫 ბილეთები</h1>
+        <p>ყველა ბილეთის ისტორია</p>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>მომხმარებელი</th><th>სტატუსი</th><th>შეიქმნა</th></tr></thead>
+          <tbody id="ticketsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Giveaways -->
+    <div id="tab-giveaways" class="tab-content">
+      <div class="page-header">
+        <h1>🎉 გათამაშებები</h1>
+        <p>აქტიური გათამაშებები</p>
+      </div>
+      <div id="giveawaysList" class="cards-grid"></div>
+    </div>
+
+    <!-- Invites -->
+    <div id="tab-invites" class="tab-content">
+      <div class="page-header">
+        <h1>📨 მოწვევა ტრეკერი</h1>
+        <p>ტოპ მომხმარებლები მოწვევებით</p>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>ადგილი</th><th>მომხმარებელი</th><th>სულ</th><th>რეალური</th><th>გავიდა</th><th>ბონუსი</th></tr></thead>
+          <tbody id="invitesTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Applications -->
+    <div id="tab-applications" class="tab-content">
+      <div class="page-header">
+        <h1>📝 განაცხადები</h1>
+        <p>ყველა შემოსული განაცხადი</p>
+      </div>
+      <div id="applicationsList" class="apps-grid"></div>
+    </div>
+
+    <!-- Settings -->
+    <div id="tab-settings" class="tab-content">
+      <div class="page-header">
+        <h1>⚙️ პარამეტრები</h1>
+        <p>სერვერის კონფიგურაცია</p>
+      </div>
+      <form id="settingsForm" class="settings-form">
+        <div class="settings-section">
+          <h3>👋 შემოსვლა / გასვლა</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>შემოსვლის არხის ID</label>
+              <input type="text" name="join_channel" placeholder="123456789012345678">
+            </div>
+            <div class="form-group">
+              <label>გასვლის არხის ID</label>
+              <input type="text" name="leave_channel" placeholder="123456789012345678">
+            </div>
+            <div class="form-group full">
+              <label>შემოსვლის შეტყობინება <small>({user}, {server}, {count})</small></label>
+              <input type="text" name="join_message" placeholder="მოგესალმებით, {user}! სერვერზე {server}">
+            </div>
+            <div class="form-group full">
+              <label>გასვლის შეტყობინება</label>
+              <input type="text" name="leave_message" placeholder="მომხმარებელი {user} დატოვა სერვერი.">
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>🎭 ავტო-როლი</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>როლის ID</label>
+              <input type="text" name="auto_role" placeholder="123456789012345678">
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>🎫 ბილეთები</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>კატეგორიის ID</label>
+              <input type="text" name="ticket_category" placeholder="123456789012345678">
+            </div>
+            <div class="form-group">
+              <label>ლოგ არხის ID</label>
+              <input type="text" name="ticket_log_channel" placeholder="123456789012345678">
+            </div>
+            <div class="form-group">
+              <label>სპორტ როლის ID</label>
+              <input type="text" name="ticket_support_role" placeholder="123456789012345678">
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>📝 განაცხადი</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>განაცხადის არხის ID</label>
+              <input type="text" name="apply_channel" placeholder="123456789012345678">
+            </div>
+            <div class="form-group">
+              <label>განაცხადის ლოგ არხის ID</label>
+              <input type="text" name="apply_log_channel" placeholder="123456789012345678">
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 შენახვა</button>
+          <div id="saveMsg" class="save-msg"></div>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Panel Modal -->
+  <div class="modal-overlay" id="panelModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="panelModalTitle">➕ პანელის შექმნა</h2>
+        <button class="modal-close" onclick="closePanel()">✕</button>
+      </div>
+
+      <div class="modal-grid">
+        <!-- Left: Form -->
+        <div>
+          <div class="form-group">
+            <label>ტიპი</label>
+            <select id="panelType" onchange="loadTemplate()">
+              <option value="ticket">🎫 ბილეთები</option>
+              <option value="apply">📝 განაცხადი</option>
+              <option value="giveaway">🎉 გათამაშება</option>
+              <option value="custom">✨ სხვა</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="channelGroup">
+            <label>არხი</label>
+            <select id="panelChannel">
+              <option value="">— იტვირთება... —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>სათაური</label>
+            <input type="text" id="panelTitle" placeholder="🎫 მხარდაჭერა" oninput="updatePreview()">
+          </div>
+
+          <div class="form-group">
+            <label>აღწერა</label>
+            <textarea id="panelDescription" placeholder="პანელის ტექსტი..." oninput="updatePreview()"></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+            <div class="form-group">
+              <label>ფერი</label>
+              <input type="color" id="panelColor" value="#5865F2" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+              <label>Footer</label>
+              <input type="text" id="panelFooter" placeholder="Mythos Core" oninput="updatePreview()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>ღილაკები <small style="color:var(--text-muted)">(მაქს. 5)</small></label>
+            <div class="button-list" id="buttonList"></div>
+            <button class="btn btn-secondary btn-sm" onclick="addButton()" style="margin-top:.5rem">➕ ღილაკის დამატება</button>
+          </div>
+        </div>
+
+        <!-- Right: Preview -->
+        <div>
+          <div class="preview-panel">
+            <h4>👁️ გადახედვა</h4>
+            <div class="discord-embed" id="previewEmbed">
+              <div class="embed-title" id="previewTitle">სათაური</div>
+              <div class="embed-desc" id="previewDesc">აღწერა...</div>
+              <div class="embed-buttons" id="previewButtons"></div>
+              <div class="embed-footer" id="previewFooter">Mythos Core</div>
+            </div>
+          </div>
+
+          <div style="margin-top:1rem">
+            <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">⚡ შაბლონები:</p>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+              <button class="template-btn" onclick="document.getElementById('panelType').value='ticket';loadTemplate()">🎫 ბილეთი</button>
+              <button class="template-btn" onclick="document.getElementById('panelType').value='apply';loadTemplate()">📝 განაცხადი</button>
+              <button class="template-btn" onclick="document.getElementById('panelType').value='giveaway';loadTemplate()">🎉 გათამაშება</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePanel()">გაუქმება</button>
+        <button class="btn btn-primary" id="panelSaveBtn" onclick="savePanel()">📤 გაგზავნა</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/guild.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mythos Core — დეშბორდი</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="app-page">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">⚡</div>
+      <span>Mythos Core</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard" class="nav-item active">
+        <span class="nav-icon">🏠</span> სერვერები
+      </a>
+      <a href="/logout" class="nav-item logout">
+        <span class="nav-icon">🚪</span> გამოსვლა
+      </a>
+    </nav>
+    <div class="sidebar-user" id="userInfo"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>სერვერების სია</h1>
+      <p>აირჩიეთ სერვერი სამართავად</p>
+    </div>
+
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card loading">
+        <div class="stat-value">—</div>
+        <div class="stat-label">ბილეთები</div>
+      </div>
+      <div class="stat-card loading">
+        <div class="stat-value">—</div>
+        <div class="stat-label">განაცხადები</div>
+      </div>
+      <div class="stat-card loading">
+        <div class="stat-value">—</div>
+        <div class="stat-label">გათამაშებები</div>
+      </div>
+    </div>
+
+    <div class="guilds-grid" id="guildsGrid">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>სერვერები იტვირთება...</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function init() {
+      const [userRes, guildsRes, statsRes] = await Promise.all([
+        fetch('/api/user'),
+        fetch('/api/guilds'),
+        fetch('/api/stats'),
+      ]);
+      const user = await userRes.json();
+      const guilds = await guildsRes.json();
+      const stats = await statsRes.json();
+
+      // User info
+      document.getElementById('userInfo').innerHTML = `
+        <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64" alt="avatar" class="user-avatar">
+        <div class="user-details">
+          <div class="user-name">${user.username}</div>
+          <div class="user-tag">ადმინი</div>
+        </div>
+      `;
+
+      // Stats
+      document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${stats.totalTickets}</div>
+          <div class="stat-label">🎫 სულ ბილეთები</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${stats.openTickets}</div>
+          <div class="stat-label">🟢 ღია ბილეთები</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${stats.totalApplications}</div>
+          <div class="stat-label">📝 განაცხადები</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${stats.activeGiveaways}</div>
+          <div class="stat-label">🎉 აქტიური გათამ.</div>
+        </div>
+      `;
+
+      // Guilds
+      if (!guilds.length) {
+        document.getElementById('guildsGrid').innerHTML = `<div class="empty-state"><p>❌ ადმინ სერვერი ვერ მოიძებნა.</p></div>`;
+        return;
+      }
+      document.getElementById('guildsGrid').innerHTML = guilds.map(g => `
+        <a href="/dashboard/${g.id}" class="guild-card">
+          <div class="guild-icon">
+            ${g.icon
+              ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64" alt="${g.name}">`
+              : `<div class="guild-icon-placeholder">${g.name[0]}</div>`
+            }
+          </div>
+          <div class="guild-info">
+            <div class="guild-name">${g.name}</div>
+            <div class="guild-id">ID: ${g.id}</div>
+          </div>
+          <div class="guild-arrow">→</div>
+        </a>
+      `).join('');
+    }
+    init();
+  </script>
+</body>
+</html>
