@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mythos Core — დეშბორდი</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="app-page">
+  <div class="orb-1" style="opacity:.45"></div>
+  <div class="orb-2" style="opacity:.35"></div>
+  <div class="stars" style="opacity:.5"></div>
+  <div class="top-line"></div>
+
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-icon">⚡</div>
@@ -18,6 +23,7 @@
       <a href="/dashboard" class="nav-item active">
         <span class="nav-icon">🏠</span> სერვერები
       </a>
+      <hr class="nav-divider">
       <a href="/logout" class="nav-item logout">
         <span class="nav-icon">🚪</span> გამოსვლა
       </a>
@@ -32,18 +38,38 @@
     </div>
 
     <div class="stats-row" id="statsRow">
-      <div class="stat-card loading">
-        <div class="stat-value">—</div>
-        <div class="stat-label">ბილეთები</div>
+      <div class="stat-card red loading">
+        <div class="stat-card-top">
+          <span class="stat-label">სულ ბილეთები</span>
+          <span class="stat-icon">🎫</span>
+        </div>
+        <div class="stat-value red">—</div>
       </div>
-      <div class="stat-card loading">
-        <div class="stat-value">—</div>
-        <div class="stat-label">განაცხადები</div>
+      <div class="stat-card green loading">
+        <div class="stat-card-top">
+          <span class="stat-label">ღია ბილეთები</span>
+          <span class="stat-icon">🟢</span>
+        </div>
+        <div class="stat-value green">—</div>
       </div>
-      <div class="stat-card loading">
-        <div class="stat-value">—</div>
-        <div class="stat-label">გათამაშებები</div>
+      <div class="stat-card blue loading">
+        <div class="stat-card-top">
+          <span class="stat-label">განაცხადები</span>
+          <span class="stat-icon">📝</span>
+        </div>
+        <div class="stat-value blue">—</div>
       </div>
+      <div class="stat-card yellow loading">
+        <div class="stat-card-top">
+          <span class="stat-label">გათამაშებები</span>
+          <span class="stat-icon">🎉</span>
+        </div>
+        <div class="stat-value yellow">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;color:rgba(255,255,255,.35);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">
+      <span>📡</span> სერვერები
     </div>
 
     <div class="guilds-grid" id="guildsGrid">
@@ -56,64 +82,68 @@
 
   <script>
     async function init() {
-      const [userRes, guildsRes, statsRes] = await Promise.all([
-        fetch('/api/user'),
-        fetch('/api/guilds'),
-        fetch('/api/stats'),
-      ]);
-      const user = await userRes.json();
-      const guilds = await guildsRes.json();
-      const stats = await statsRes.json();
+      try {
+        const [userRes, guildsRes, statsRes] = await Promise.all([
+          fetch('/api/user'),
+          fetch('/api/guilds'),
+          fetch('/api/stats'),
+        ]);
+        const user   = await userRes.json();
+        const guilds = await guildsRes.json();
+        const stats  = await statsRes.json();
 
-      // User info
-      document.getElementById('userInfo').innerHTML = `
-        <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64" alt="avatar" class="user-avatar">
-        <div class="user-details">
-          <div class="user-name">${user.username}</div>
-          <div class="user-tag">ადმინი</div>
-        </div>
-      `;
+        // User info
+        document.getElementById('userInfo').innerHTML = `
+          <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64" alt="avatar" class="user-avatar" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+          <div>
+            <div class="user-name">${user.username}</div>
+            <div class="user-tag">ადმინი</div>
+          </div>
+        `;
 
-      // Stats
-      document.getElementById('statsRow').innerHTML = `
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalTickets}</div>
-          <div class="stat-label">🎫 სულ ბილეთები</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.openTickets}</div>
-          <div class="stat-label">🟢 ღია ბილეთები</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalApplications}</div>
-          <div class="stat-label">📝 განაცხადები</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.activeGiveaways}</div>
-          <div class="stat-label">🎉 აქტიური გათამ.</div>
-        </div>
-      `;
+        // Stats
+        document.getElementById('statsRow').innerHTML = `
+          <div class="stat-card red">
+            <div class="stat-card-top"><span class="stat-label">სულ ბილეთები</span><span class="stat-icon">🎫</span></div>
+            <div class="stat-value red">${stats.totalTickets ?? 0}</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-card-top"><span class="stat-label">ღია ბილეთები</span><span class="stat-icon">✅</span></div>
+            <div class="stat-value green">${stats.openTickets ?? 0}</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-card-top"><span class="stat-label">განაცხადები</span><span class="stat-icon">📝</span></div>
+            <div class="stat-value blue">${stats.totalApplications ?? 0}</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-card-top"><span class="stat-label">გათამაშებები</span><span class="stat-icon">🎉</span></div>
+            <div class="stat-value yellow">${stats.activeGiveaways ?? 0}</div>
+          </div>
+        `;
 
-      // Guilds
-      if (!guilds.length) {
-        document.getElementById('guildsGrid').innerHTML = `<div class="empty-state"><p>❌ ადმინ სერვერი ვერ მოიძებნა.</p></div>`;
-        return;
+        // Guilds
+        if (!Array.isArray(guilds) || !guilds.length) {
+          document.getElementById('guildsGrid').innerHTML = `<div class="empty-state"><p>❌ ადმინ სერვერი ვერ მოიძებნა.</p></div>`;
+          return;
+        }
+        document.getElementById('guildsGrid').innerHTML = guilds.map(g => `
+          <a href="/dashboard/${g.id}" class="guild-card">
+            <div class="guild-icon">
+              ${g.icon
+                ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64" alt="${g.name}">`
+                : `<div class="guild-icon-placeholder">${g.name[0]}</div>`
+              }
+            </div>
+            <div class="guild-info">
+              <div class="guild-name">${g.name}</div>
+              <div class="guild-id">ID: ${g.id}</div>
+            </div>
+            <div class="guild-arrow">→</div>
+          </a>
+        `).join('');
+      } catch (e) {
+        document.getElementById('guildsGrid').innerHTML = `<div class="empty-state"><p>⚠️ შეცდომა მონაცემების ჩატვირთვისას</p></div>`;
       }
-      document.getElementById('guildsGrid').innerHTML = guilds.map(g => `
-        <a href="/dashboard/${g.id}" class="guild-card">
-          <div class="guild-icon">
-            ${g.icon
-              ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64" alt="${g.name}">`
-              : `<div class="guild-icon-placeholder">${g.name[0]}</div>`
-            }
-          </div>
-          <div class="guild-info">
-            <div class="guild-name">${g.name}</div>
-            <div class="guild-id">ID: ${g.id}</div>
-          </div>
-          <div class="guild-arrow">→</div>
-        </a>
-      `).join('');
     }
     init();
   </script>
