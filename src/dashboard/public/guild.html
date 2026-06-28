@@ -205,10 +205,12 @@
           </div>
           <div class="form-group" style="margin-bottom:.8rem">
             <label>პანელის ტიპი</label>
-            <select id="pm-type" class="form-select">
-              <option value="support">მხარდაჭერა</option>
-              <option value="report">მოხსენება</option>
-              <option value="order">შეკვეთა</option>
+            <select id="pm-type" class="form-select" onchange="loadTemplate()">
+              <option value="support">🎫 მხარდაჭერა</option>
+              <option value="report">📩 მოხსენება</option>
+              <option value="order">🛒 შეკვეთა</option>
+              <option value="giveaway">🎉 გათამაშება</option>
+              <option value="apply">📝 განაცხადი</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:.8rem">

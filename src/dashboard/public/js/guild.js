@@ -269,6 +269,61 @@ function renderPanels(panels) {
   }).join('');
 }
 
+// ─── Template loader ──────────────────────────────────────────────────────────
+const panelTemplates = {
+  support: {
+    title: '🎫 მხარდაჭერა',
+    description: '**ბილეთის გასახსნელად დააჭირეთ ღილაკს ქვემოთ.**\n\nჩვენი გუნდი მზადაა თქვენს დასახმარებლად.',
+    color: '#5865F2',
+    footer: 'Mythos Core • ბილეთების სისტემა',
+    buttons: [{ label: 'ბილეთის გახსნა', emoji: '📩', style: 'primary', custom_id: 'ticket_create' }]
+  },
+  report: {
+    title: '📩 მოხსენება',
+    description: '**გსურთ მოხსენება გამოაგზავნოთ?**\n\nდააჭირეთ ღილაკს და შეავსეთ ფორმა.',
+    color: '#ED4245',
+    footer: 'Mythos Core • მოხსენება',
+    buttons: [{ label: 'მოხსენება', emoji: '📩', style: 'danger', custom_id: 'ticket_report' }]
+  },
+  order: {
+    title: '🛒 შეკვეთა',
+    description: '**შეკვეთის გასაკეთებლად დააჭირეთ ღილაკს.**\n\nჩვენი გუნდი დაგიკავშირდებათ.',
+    color: '#57F287',
+    footer: 'Mythos Core • შეკვეთა',
+    buttons: [{ label: 'შეკვეთა', emoji: '🛒', style: 'success', custom_id: 'ticket_order' }]
+  },
+  giveaway: {
+    title: '🎉 გათამაშება',
+    description: '**მონაწილეობისთვის დააჭირეთ ღილაკს!**\n\nგამარჯვებული შემთხვევითად შეირჩევა.',
+    color: '#FFD700',
+    footer: 'Mythos Core • გათამაშება',
+    buttons: [
+      { label: 'მონაწილეობა', emoji: '🎉', style: 'success', custom_id: 'gw_enter' },
+      { label: 'გამოსვლა',   emoji: '🚪', style: 'danger',  custom_id: 'gw_leave' }
+    ]
+  },
+  apply: {
+    title: '📝 განაცხადი',
+    description: '**გსურთ ჩვენი გუნდის ნაწილი გახდეთ?**\n\nდააჭირეთ ღილაკს და შეავსეთ ფორმა.',
+    color: '#57F287',
+    footer: 'Mythos Core • განაცხადი',
+    buttons: [{ label: 'განაცხადის გაგზავნა', emoji: '📝', style: 'success', custom_id: 'apply_open' }]
+  },
+};
+
+function loadTemplate() {
+  const type = document.getElementById('pm-type')?.value;
+  const t = panelTemplates[type];
+  if (!t) return;
+  document.getElementById('pm-title').value       = t.title;
+  document.getElementById('pm-description').value = t.description;
+  document.getElementById('pm-color').value       = t.color;
+  document.getElementById('pm-footer').value      = t.footer;
+  panelButtons = [...t.buttons];
+  renderButtonList();
+  updatePreview();
+}
+
 function openCreatePanel() {
   editingPanelId = null;
   panelButtons   = [];
@@ -279,6 +334,8 @@ function openCreatePanel() {
   document.getElementById('pm-type').value        = 'support';
   const ch = document.getElementById('pm-channel');
   if (ch) ch.value = '';
+  // ტიპის მიხედვით template-ის ჩატვირთვა
+  loadTemplate();
   renderButtonList();
   updatePreview();
   openModal('panelModal');
@@ -299,7 +356,6 @@ async function openEditPanel(id) {
   document.getElementById('pm-footer').value      = panel.footer || '';
   document.getElementById('pm-type').value        = panel.type;
 
-  // Set channel select value
   const ch = document.getElementById('pm-channel');
   if (ch) ch.value = panel.channel_id || '';
 
