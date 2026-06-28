@@ -1,7 +1,8 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } = require('discord.js');
 const { getGuildConfig, getTicketByChannel, closeTicket, incrementTicketCount, createTicket,
   enterGiveaway, leaveGiveaway, getGiveawayByMessage, getGiveaway,
-  createApplication, updateApplicationMessage, updateApplicationStatus, getGiveawayEntries } = require('../database/Database');
+  createApplication, updateApplicationMessage, updateApplicationStatus, getGiveawayEntries,
+  db } = require('../database/Database');
 
 module.exports = {
   name: 'interactionCreate',
@@ -42,6 +43,16 @@ module.exports = {
       else if (id.startsWith('apply_reject_')) await handleApplyDecision(interaction, 'rejected');
       else if (id === 'gw_enter') await handleGiveawayEnter(interaction);
       else if (id === 'gw_leave') await handleGiveawayLeave(interaction);
+
+      // Panel custom buttons - handle unknown button IDs gracefully
+      else {
+        // Check if this button belongs to a panel
+        const panel = db.prepare('SELECT * FROM panels WHERE message_id = ?').get(interaction.message.id);
+        if (panel) {
+          // Panel button with no specific handler - ignore silently
+          await interaction.reply({ content: '✅', ephemeral: true }).catch(() => {});
+        }
+      }
     }
   }
 };
@@ -51,7 +62,6 @@ async function handleTicketCreate(interaction, client) {
   const config = getGuildConfig(interaction.guild.id);
   await interaction.deferReply({ ephemeral: true });
 
-  // Check if user already has open ticket
   const existing = interaction.guild.channels.cache.find(c =>
     c.topic === `ticket-${interaction.user.id}` && c.parentId === config.ticket_category
   );
@@ -237,19 +247,34 @@ async function handleApplyDecision(interaction, status) {
 
 // ─── GIVEAWAY ───────────────────────────────────────────────────────────────
 async function handleGiveawayEnter(interaction) {
-  const giveaway = getGiveawayByMessage(interaction.message.id);
+  // First check giveaways table by message_id
+  let giveaway = getGiveawayByMessage(interaction.message.id);
+
+  // If not found, check if it's a panel-based giveaway - create a virtual giveaway entry
+  if (!giveaway) {
+    const panel = db.prepare('SELECT * FROM panels WHERE message_id = ? AND type = ?').get(interaction.message.id, 'giveaway');
+    if (panel) {
+      // Create giveaway entry in DB for this panel so entries can be tracked
+      const endsAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days default
+      const result = db.prepare(
+        'INSERT OR IGNORE INTO giveaways (guild_id, channel_id, message_id, prize, winner_count, host_id, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).run(panel.guild_id, panel.channel_id, panel.message_id, panel.title, 1, 'dashboard', endsAt);
+
+      giveaway = getGiveawayByMessage(interaction.message.id);
+    }
+  }
+
   if (!giveaway || giveaway.ended) {
     return interaction.reply({ content: '❌ ეს გათამაშება უკვე დასრულდა.', ephemeral: true });
   }
 
   const entered = enterGiveaway(giveaway.id, interaction.user.id);
-  const entries = getGiveawayEntries(giveaway.id);
-
   if (!entered) {
     return interaction.reply({ content: '❌ თქვენ უკვე მონაწილეობთ ამ გათამაშებაში.', ephemeral: true });
   }
 
-  // Update participant count in embed
+  const entries = getGiveawayEntries(giveaway.id);
+
   const embed = EmbedBuilder.from(interaction.message.embeds[0]);
   const fields = embed.data.fields || [];
   const idx = fields.findIndex(f => f.name === '👥 მონაწილეები');
@@ -257,11 +282,17 @@ async function handleGiveawayEnter(interaction) {
   else embed.addFields({ name: '👥 მონაწილეები', value: String(entries.length), inline: true });
 
   await interaction.update({ embeds: [embed] });
-  await interaction.followUp({ content: '✅ წარმატებით გაიარეთ სარეგისტრაციო!', ephemeral: true });
+  await interaction.followUp({ content: `✅ წარმატებით დარეგისტრირდით! სულ მონაწილე: **${entries.length}**`, ephemeral: true });
 }
 
 async function handleGiveawayLeave(interaction) {
-  const giveaway = getGiveawayByMessage(interaction.message.id);
+  let giveaway = getGiveawayByMessage(interaction.message.id);
+
+  if (!giveaway) {
+    const panel = db.prepare('SELECT * FROM panels WHERE message_id = ? AND type = ?').get(interaction.message.id, 'giveaway');
+    if (panel) giveaway = getGiveawayByMessage(interaction.message.id);
+  }
+
   if (!giveaway || giveaway.ended) {
     return interaction.reply({ content: '❌ ეს გათამაშება უკვე დასრულდა.', ephemeral: true });
   }
@@ -278,5 +309,5 @@ async function handleGiveawayLeave(interaction) {
   if (idx !== -1) fields[idx].value = String(entries.length);
 
   await interaction.update({ embeds: [embed] });
-  await interaction.followUp({ content: '✅ გათამაშებიდან გამოხვედით.', ephemeral: true });
+  await interaction.followUp({ content: `✅ გათამაშებიდან გამოხვედით.`, ephemeral: true });
 }
