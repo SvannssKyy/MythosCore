@@ -50,12 +50,12 @@ async function init() {
     fetch(`/api/guild/${guildId}/invites`),
   ]);
 
-  const user     = await userRes.json();
-  const config   = await configRes.json();
-  const tickets  = await ticketsRes.json();
-  const apps     = await appsRes.json();
+  const user      = await userRes.json();
+  const config    = await configRes.json();
+  const tickets   = await ticketsRes.json();
+  const apps      = await appsRes.json();
   const giveaways = await giveawaysRes.json();
-  const invites  = await invitesRes.json();
+  const invites   = await invitesRes.json();
 
   // User info
   document.getElementById('userInfo').innerHTML = `
@@ -67,13 +67,12 @@ async function init() {
   `;
 
   // Stats
-  const openTickets = tickets.filter(t => t.status === 'open').length;
-  const pendingApps = apps.filter(a => a.status === 'pending').length;
+  const openTickets  = tickets.filter(t => t.status === 'open').length;
   const totalInvites = invites.reduce((s, r) => s + Math.max(0, r.real_count - r.left_count - r.fake_count + r.bonus), 0);
 
   const statsEl = document.getElementById('guildStats');
   if (statsEl) {
-    const cards = statsEl.querySelectorAll('.stat-card');
+    const cards  = statsEl.querySelectorAll('.stat-card');
     const values = [tickets.length, openTickets, apps.length, giveaways.length, totalInvites];
     cards.forEach((c, i) => {
       c.classList.remove('loading');
@@ -82,9 +81,8 @@ async function init() {
   }
 
   // Recent tickets
-  const recentTickets = tickets.slice(0, 6);
-  document.getElementById('recentTickets').innerHTML = recentTickets.length
-    ? recentTickets.map(t => `
+  document.getElementById('recentTickets').innerHTML = tickets.slice(0, 6).length
+    ? tickets.slice(0, 6).map(t => `
         <div class="list-item">
           <span>🎫 ${t.user_id} — #${t.id}</span>
           <span class="badge ${t.status === 'open' ? 'badge-success' : 'badge-danger'}">${t.status === 'open' ? 'ღია' : 'დახურული'}</span>
@@ -92,9 +90,8 @@ async function init() {
     : '<div class="empty-state"><p>ბილეთები არ არის</p></div>';
 
   // Recent apps
-  const recentApps = apps.slice(0, 6);
-  document.getElementById('recentApps').innerHTML = recentApps.length
-    ? recentApps.map(a => `
+  document.getElementById('recentApps').innerHTML = apps.slice(0, 6).length
+    ? apps.slice(0, 6).map(a => `
         <div class="list-item">
           <span>📝 ${a.name} — #${a.id}</span>
           <span class="badge ${a.status === 'pending' ? 'badge-warning' : a.status === 'accepted' ? 'badge-success' : 'badge-danger'}">
@@ -139,12 +136,9 @@ async function init() {
           const total = row.real_count - row.left_count - row.fake_count + row.bonus;
           const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
           return `<tr>
-            <td>${medal}</td>
-            <td><code>${row.user_id}</code></td>
-            <td><strong>${total}</strong></td>
-            <td>${row.real_count}</td>
-            <td>${row.left_count}</td>
-            <td>${row.bonus}</td>
+            <td>${medal}</td><td><code>${row.user_id}</code></td>
+            <td><strong>${total}</strong></td><td>${row.real_count}</td>
+            <td>${row.left_count}</td><td>${row.bonus}</td>
           </tr>`;
         }).join('')}</tbody>
       </table>`
@@ -169,25 +163,21 @@ async function init() {
         </div>`).join('')
     : '<div class="empty-state"><p>📝 განაცხადები არ არის</p></div>';
 
-  // Settings
   populateSettings(config);
-
-  // Panels
   await loadPanels();
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function populateSettings(config) {
   const map = {
-    'cfg-ticketCategoryId':       config.ticket_category,
-    'cfg-ticketLogsChannelId':    config.ticket_log_channel,
+    'cfg-ticketCategoryId':          config.ticket_category,
+    'cfg-ticketLogsChannelId':       config.ticket_log_channel,
     'cfg-ticketTranscriptChannelId': config.ticket_log_channel,
-    'cfg-ticketNameFormat':       null,
-    'cfg-welcomeChannelId':       config.join_channel,
-    'cfg-leaveChannelId':         config.leave_channel,
-    'cfg-welcomeMessage':         config.join_message,
-    'cfg-leaveMessage':           config.leave_message,
-    'cfg-autoroleId':             config.auto_role,
+    'cfg-welcomeChannelId':          config.join_channel,
+    'cfg-leaveChannelId':            config.leave_channel,
+    'cfg-welcomeMessage':            config.join_message,
+    'cfg-leaveMessage':              config.leave_message,
+    'cfg-autoroleId':                config.auto_role,
   };
   for (const [id, val] of Object.entries(map)) {
     const el = document.getElementById(id);
@@ -206,31 +196,39 @@ async function saveSettings(e) {
     leave_message:      document.getElementById('cfg-leaveMessage')?.value || '',
     auto_role:          document.getElementById('cfg-autoroleId')?.value || '',
   };
-
-  const res = await fetch(`/api/guild/${guildId}/config`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const res  = await fetch(`/api/guild/${guildId}/config`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
   });
   const json = await res.json();
-  const msg = document.getElementById('saveMsg');
-  if (json.success) {
-    msg.textContent = '✅ შენახულია!';
-    msg.className = 'save-msg show-success';
-  } else {
-    msg.textContent = '❌ შეცდომა';
-    msg.className = 'save-msg show-error';
-  }
+  const msg  = document.getElementById('saveMsg');
+  msg.textContent = json.success ? '✅ შენახულია!' : '❌ შეცდომა';
+  msg.className   = json.success ? 'save-msg show-success' : 'save-msg show-error';
   setTimeout(() => { msg.textContent = ''; msg.className = 'save-msg'; }, 3000);
 }
 
 // ─── Panels ───────────────────────────────────────────────────────────────────
-let panelButtons = [];
+let panelButtons  = [];
 let editingPanelId = null;
+let allChannels   = [];
 
 async function loadPanels() {
-  const res = await fetch(`/api/guild/${guildId}/panels`);
-  const panels = await res.json();
+  const [panelsRes, chRes] = await Promise.all([
+    fetch(`/api/guild/${guildId}/panels`),
+    fetch(`/api/guild/${guildId}/channels`),
+  ]);
+  const panels = await panelsRes.json();
+  allChannels  = await chRes.json();
+
+  // Populate channel select in modal
+  const chSelect = document.getElementById('pm-channel');
+  if (chSelect && chSelect.tagName === 'SELECT') {
+    const textChannels = allChannels
+      .filter(c => c.type === 0)
+      .sort((a, b) => a.position - b.position);
+    chSelect.innerHTML = '<option value="">— აირჩიეთ არხი —</option>' +
+      textChannels.map(c => `<option value="${c.id}">#${c.name}</option>`).join('');
+  }
+
   renderPanels(panels);
 }
 
@@ -245,6 +243,7 @@ function renderPanels(panels) {
   const typeLabel = { ticket: 'ბილეთი', apply: 'განაცხადი', giveaway: 'გათამაშება', custom: 'სხვა', support: 'მხარდაჭერა', report: 'მოხსენება', order: 'შეკვეთა' };
 
   container.innerHTML = panels.map(p => {
+    const chName   = allChannels.find(c => c.id === p.channel_id)?.name || p.channel_id;
     const btnCount = p.buttons?.length || 0;
     return `
       <div class="panel-card" style="border-left:4px solid ${p.color || '#dc2626'}">
@@ -252,7 +251,7 @@ function renderPanels(panels) {
           <div>
             <span class="panel-type-badge">${typeIcon[p.type] || '✨'} ${typeLabel[p.type] || p.type}</span>
             <div class="panel-title">${p.title}</div>
-            <div class="panel-meta">${btnCount} ღილაკი</div>
+            <div class="panel-meta">#${chName} • ${btnCount} ღილაკი</div>
           </div>
           <div class="panel-actions">
             <button class="btn btn-sm btn-secondary" onclick="openEditPanel(${p.id})">✏️</button>
@@ -272,39 +271,44 @@ function renderPanels(panels) {
 
 function openCreatePanel() {
   editingPanelId = null;
-  panelButtons = [];
-  document.getElementById('pm-title').value = '';
+  panelButtons   = [];
+  document.getElementById('pm-title').value       = '';
   document.getElementById('pm-description').value = '';
-  document.getElementById('pm-color').value = '#dc2626';
-  document.getElementById('pm-footer').value = 'Mythos Core';
-  document.getElementById('pm-channel').value = '';
-  document.getElementById('pm-type').value = 'support';
+  document.getElementById('pm-color').value       = '#dc2626';
+  document.getElementById('pm-footer').value      = 'Mythos Core';
+  document.getElementById('pm-type').value        = 'support';
+  const ch = document.getElementById('pm-channel');
+  if (ch) ch.value = '';
   renderButtonList();
   updatePreview();
   openModal('panelModal');
 }
 
 async function openEditPanel(id) {
-  const res = await fetch(`/api/guild/${guildId}/panels`);
+  const res    = await fetch(`/api/guild/${guildId}/panels`);
   const panels = await res.json();
-  const panel = panels.find(p => p.id === id);
+  const panel  = panels.find(p => p.id === id);
   if (!panel) return;
 
   editingPanelId = id;
-  panelButtons = panel.buttons || [];
+  panelButtons   = panel.buttons || [];
 
-  document.getElementById('pm-title').value = panel.title;
+  document.getElementById('pm-title').value       = panel.title;
   document.getElementById('pm-description').value = panel.description;
-  document.getElementById('pm-color').value = panel.color || '#dc2626';
-  document.getElementById('pm-footer').value = panel.footer || '';
-  document.getElementById('pm-type').value = panel.type;
-  document.getElementById('pm-channel').value = panel.channel_id || '';
+  document.getElementById('pm-color').value       = panel.color || '#dc2626';
+  document.getElementById('pm-footer').value      = panel.footer || '';
+  document.getElementById('pm-type').value        = panel.type;
+
+  // Set channel select value
+  const ch = document.getElementById('pm-channel');
+  if (ch) ch.value = panel.channel_id || '';
 
   renderButtonList();
   updatePreview();
   openModal('panelModal');
 }
 
+// ─── Buttons ──────────────────────────────────────────────────────────────────
 function addButton(label, style, custom_id) {
   if (panelButtons.length >= 5) { alert('მაქსიმუმ 5 ღილაკი!'); return; }
   panelButtons.push({ label, style, custom_id, emoji: '' });
@@ -314,12 +318,24 @@ function addButton(label, style, custom_id) {
 
 function addCustomButton() {
   if (panelButtons.length >= 5) { alert('მაქსიმუმ 5 ღილაკი!'); return; }
-  const label = prompt('ღილაკის ტექსტი:');
+  const label     = prompt('ღილაკის ტექსტი:');
   if (!label) return;
-  const emoji = prompt('ემოჯი (სურვილისამებრ):') || '';
-  const style = prompt('სტილი (primary/secondary/success/danger):') || 'primary';
-  const custom_id = prompt('Custom ID:') || `btn_${Date.now()}`;
+  const emoji     = prompt('ემოჯი (სურვილისამებრ, მაგ: 📩):') || '';
+  const style     = prompt('სტილი (primary / secondary / success / danger):') || 'primary';
+  const custom_id = prompt('Custom ID (მაგ: ticket_create):') || `btn_${Date.now()}`;
   panelButtons.push({ label, emoji, style, custom_id });
+  renderButtonList();
+  updatePreview();
+}
+
+function editButtonAt(i) {
+  const b         = panelButtons[i];
+  const label     = prompt('ღილაკის ტექსტი:', b.label);
+  if (!label) return;
+  const emoji     = prompt('ემოჯი:', b.emoji || '') || '';
+  const style     = prompt('სტილი (primary/secondary/success/danger):', b.style) || 'primary';
+  const custom_id = prompt('Custom ID:', b.custom_id) || b.custom_id;
+  panelButtons[i] = { label, emoji, style, custom_id };
   renderButtonList();
   updatePreview();
 }
@@ -339,22 +355,25 @@ function renderButtonList() {
         <span class="embed-btn embed-btn-${b.style}">${b.emoji ? b.emoji + ' ' : ''}${b.label}</span>
         <small style="color:rgba(255,255,255,.4)">ID: ${b.custom_id}</small>
       </div>
-      <button class="btn btn-sm btn-danger" onclick="removeButtonAt(${i})">✕</button>
+      <div style="display:flex;gap:.3rem">
+        <button class="btn btn-sm btn-secondary" onclick="editButtonAt(${i})">✏️</button>
+        <button class="btn btn-sm btn-danger"    onclick="removeButtonAt(${i})">✕</button>
+      </div>
     </div>
   `).join('') || '<div style="color:rgba(255,255,255,.3);font-size:.8rem;padding:.4rem">ღილაკები არ არის</div>';
 }
 
 function updatePreview() {
-  const title  = document.getElementById('pm-title')?.value || 'სათაური';
+  const title  = document.getElementById('pm-title')?.value       || 'სათაური';
   const desc   = document.getElementById('pm-description')?.value || 'აღწერა...';
-  const color  = document.getElementById('pm-color')?.value || '#dc2626';
-  const footer = document.getElementById('pm-footer')?.value || 'Mythos Core';
+  const color  = document.getElementById('pm-color')?.value       || '#dc2626';
+  const footer = document.getElementById('pm-footer')?.value      || 'Mythos Core';
 
   const preview = document.getElementById('embedPreview');
   if (preview) preview.style.borderLeftColor = color;
-  const pt = document.getElementById('prev-title');   if (pt) pt.textContent = title;
-  const pd = document.getElementById('prev-desc');    if (pd) pd.textContent = desc;
-  const pf = document.getElementById('prev-footer');  if (pf) pf.textContent = footer;
+  const pt = document.getElementById('prev-title');  if (pt) pt.textContent = title;
+  const pd = document.getElementById('prev-desc');   if (pd) pd.textContent = desc;
+  const pf = document.getElementById('prev-footer'); if (pf) pf.textContent = footer;
   const pb = document.getElementById('prev-buttons');
   if (pb) pb.innerHTML = panelButtons.map(b =>
     `<span class="embed-btn embed-btn-${b.style}">${b.emoji ? b.emoji + ' ' : ''}${b.label}</span>`
@@ -383,7 +402,11 @@ async function savePanel() {
         body: JSON.stringify({ title, description, color, footer, buttons: panelButtons })
       });
     } else {
-      if (!channel_id) { alert('შეიყვანეთ არხის ID!'); if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '📤 Discord-ში გაგზავნა'; } return; }
+      if (!channel_id) {
+        alert('აირჩიეთ არხი!');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '📤 Discord-ში გაგზავნა'; }
+        return;
+      }
       res = await fetch(`/api/guild/${guildId}/panels`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -406,7 +429,7 @@ async function savePanel() {
 
 async function deletePanelById(id) {
   if (!confirm('დარწმუნებული ხართ? Discord-შიც წაიშლება.')) return;
-  const res = await fetch(`/api/guild/${guildId}/panels/${id}`, { method: 'DELETE' });
+  const res  = await fetch(`/api/guild/${guildId}/panels/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (json.success) await loadPanels();
   else alert('შეცდომა: ' + json.error);
@@ -414,29 +437,23 @@ async function deletePanelById(id) {
 
 // ─── Giveaway Modal ──────────────────────────────────────────────────────────
 async function createGiveaway() {
-  const prize    = document.getElementById('gw-prize')?.value.trim();
-  const winners  = parseInt(document.getElementById('gw-winners')?.value) || 1;
-  const endsAt   = document.getElementById('gw-ends')?.value;
+  const prize     = document.getElementById('gw-prize')?.value.trim();
+  const winners   = parseInt(document.getElementById('gw-winners')?.value) || 1;
+  const endsAt    = document.getElementById('gw-ends')?.value;
   const channelId = document.getElementById('gw-channel')?.value.trim();
 
   if (!prize || !endsAt || !channelId) return alert('ყველა ველი სავალდებულოა!');
-
-  const endsAtUnix = Math.floor(new Date(endsAt).getTime() / 1000);
   const durationMs = new Date(endsAt).getTime() - Date.now();
   if (durationMs < 10000) return alert('დასასრულის დრო სამომავლო უნდა იყოს!');
 
-  const res = await fetch(`/api/guild/${guildId}/giveaway`, {
+  const res  = await fetch(`/api/guild/${guildId}/giveaway`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prize, winner_count: winners, channel_id: channelId, ends_at: endsAtUnix })
+    body: JSON.stringify({ prize, winner_count: winners, channel_id: channelId, ends_at: Math.floor(new Date(endsAt).getTime() / 1000) })
   });
   const json = await res.json();
-  if (json.success) {
-    closeModal('giveawayModal');
-    alert('✅ გათამაშება დაიწყო!');
-  } else {
-    alert('შეცდომა: ' + (json.error || 'უცნობი შეცდომა'));
-  }
+  if (json.success) { closeModal('giveawayModal'); alert('✅ გათამაშება დაიწყო!'); }
+  else alert('შეცდომა: ' + (json.error || 'უცნობი შეცდომა'));
 }
 
 init();

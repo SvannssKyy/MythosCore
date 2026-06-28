@@ -84,7 +84,7 @@
     <div id="tab-panels" class="tab-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
         <span style="color:rgba(255,255,255,.4);font-size:.85rem;">Discord-ის ბილეთების პანელები</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('panelModal')">+ ახალი პანელი</button>
+        <button class="btn btn-primary btn-sm" onclick="openCreatePanel()">+ ახალი პანელი</button>
       </div>
       <div id="panelsList"><div class="loading-state"><div class="spinner"></div></div></div>
     </div>
@@ -224,8 +224,10 @@
             <input type="color" id="pm-color" value="#dc2626" oninput="updatePreview()">
           </div>
           <div class="form-group" style="margin-bottom:.8rem">
-            <label>არხი (ID)</label>
-            <input type="text" id="pm-channel" placeholder="1234567890">
+            <label>არხი</label>
+            <select id="pm-channel" class="form-select">
+              <option value="">— აირჩიეთ არხი —</option>
+            </select>
           </div>
           <div class="form-group" style="margin-bottom:.8rem">
             <label>Footer ტექსტი</label>
@@ -236,7 +238,7 @@
             <div style="font-size:.78rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">ღილაკები</div>
             <div class="button-list" id="buttonList"></div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem">
-              <button type="button" class="template-btn" onclick="addButton('🎫 ბილეთი','primary','ticket_open')">+ ბილეთი</button>
+              <button type="button" class="template-btn" onclick="addButton('🎫 ბილეთი','primary','ticket_create')">+ ბილეთი</button>
               <button type="button" class="template-btn" onclick="addButton('📩 მოხსენება','danger','ticket_report')">+ მოხსენება</button>
               <button type="button" class="template-btn" onclick="addButton('🛒 შეკვეთა','success','ticket_order')">+ შეკვეთა</button>
               <button type="button" class="template-btn" onclick="addCustomButton()">+ სახელობითი</button>
