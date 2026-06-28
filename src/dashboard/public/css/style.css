@@ -450,7 +450,20 @@ a { text-decoration: none; color: inherit; }
 .form-group input::placeholder { color: var(--text-muted); opacity: .5; }
 .form-group input[type="color"] { height: 42px; padding: .2rem; cursor: pointer; }
 .form-group textarea { min-height: 90px; resize: vertical; }
-.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.3)' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .7rem center; }
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.3)' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .7rem center;
+}
+
+/* ─── Select dropdown options ───────────────────────────────────────────── */
+.form-group select option,
+.form-select option {
+  background-color: #1a1c23;
+  color: #f1f5f9;
+}
+
 .form-actions { display: flex; align-items: center; gap: 1rem; padding-top: .5rem; }
 .save-msg { font-size: .875rem; font-weight: 500; transition: opacity .3s; }
 .save-msg.show-success { color: #4ade80; }
@@ -525,6 +538,3 @@ code {
   background: rgba(255,255,255,.07); padding: .1rem .45rem;
   border-radius: 4px; font-size: .8em;
 }
-
-
-
