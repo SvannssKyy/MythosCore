@@ -171,8 +171,17 @@ app.post('/api/guild/:guildId/panels', isAuth, async (req, res) => {
     return res.status(400).json({ error: 'missing fields' });
   }
 
+  // გათამაშების პანელისთვის ავტომატურად დაემატება 2 ღილაკი
+  let finalButtons = buttons || [];
+  if (type === 'giveaway') {
+    finalButtons = [
+      { label: 'მონაწილეობა', style: 'success', custom_id: 'gw_enter', emoji: '🎉' },
+      { label: 'გამოსვლა',   style: 'danger',  custom_id: 'gw_leave', emoji: '🚪' },
+    ];
+  }
+
   const embed = buildEmbed(title, description, color, footer || `Mythos Core • ${type}`);
-  const discordButtons = buildDiscordButtons(buttons);
+  const discordButtons = buildDiscordButtons(finalButtons);
   const components = discordButtons.length > 0
     ? [{ type: 1, components: discordButtons.slice(0, 5) }]
     : [];
@@ -183,7 +192,7 @@ app.post('/api/guild/:guildId/panels', isAuth, async (req, res) => {
       { embeds: [embed], components },
       { headers: { Authorization: `Bot ${process.env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' } }
     );
-    const panelId = createPanel(guildId, channel_id, type, title, description, color || '#5865F2', footer, buttons || []);
+    const panelId = createPanel(guildId, channel_id, type, title, description, color || '#5865F2', footer, finalButtons);
     updatePanelMessage(panelId, msgRes.data.id);
     res.json({ success: true, id: panelId });
   } catch (e) {
